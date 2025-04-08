@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>감성 영어 회화 생성기</title>
+  <script src="https://cdn.tailwindcss.com"></script>  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+  <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-xl text-center">
+    <h1 class="text-2xl font-bold text-blue-700 mb-4">💬 감성 영어 회화 생성기</h1>
+    <textarea id="koreanInput" rows="3" class="w-full p-3 border rounded-md mb-4" placeholder="예: 비가 오니 네 생각이 나"></textarea>
+    <button onclick="generate()" class="bg-blue-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-blue-700">
+      회화 예시 생성
+    </button>
+
+    <div id="result" class="mt-6 hidden text-left">
+      <h2 class="font-bold text-lg mb-2 text-gray-800">🇺🇸 번역 결과:</h2>
+      <p id="translated" class="bg-gray-100 p-3 rounded-md text-gray-700"></p>
+      <h2 class="font-bold text-lg mt-4 mb-2 text-gray-800">🎭 회화 예시:</h2>
+      <div id="examples" class="space-y-2 text-gray-700"></div>
+    </div>
+  </div>
+
+  <script>
+    async function generate() {
+      const input = document.getElementById("koreanInput").value.trim();
+      if (!input) {
+        Swal.fire("⚠️", "문장을 입력해주세요.", "warning");
+        return;
+      }
+
+      Swal.fire({ title: "처리 중...", text: "잠시만 기다려주세요.", didOpen: () => Swal.showLoading() });
+
+      try {
+        const res = await fetch("/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ korean: input })
+        });
+
+        const data = await res.json();
+        document.getElementById("translated").textContent = data.english;
+        document.getElementById("examples").innerHTML = data.dialogues
+          .split(/\n{2,}/)
+          .map(p => `<pre class="bg-white p-3 border rounded-md whitespace-pre-wrap">${p.trim()}</pre>`)
+          .join("");
+
+        document.getElementById("result").classList.remove("hidden");
+        Swal.close();
+      } catch (e) {
+        console.error(e);
+        Swal.fire("오류", "API 요청 중 문제가 발생했습니다.", "error");
+      }
+    }
+  </script>
+</body>
+</html>
