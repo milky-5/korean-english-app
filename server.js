@@ -55,13 +55,13 @@ app.post("/translate", async (req, res) => {
 
     const english = translationResponse.choices[0].message.content.trim();
 
+    // 회화 예시 프롬프트 개선: 번역문이 반드시 첫 문장에 포함되고, 각 예시가 2회 이상 주고받는 대화(4줄 이상)로 생성
     const dialogueResponse = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "user",
-          content: `Using this sentence: "${english}", create 2 short natural dialogues in English. 
-Each dialogue should have 2 lines: one by A, one by B. Return as an array of arrays like [["A: ...", "B: ..."], ["A: ...", "B: ..."]].`,
+          content: `Using this sentence: \"${english}\", create 2 natural English dialogues.\nEach dialogue must have at least 4 lines (A and B each speak at least twice). The first line of each dialogue must include the sentence: \"${english}\".\nReturn as an array of arrays like [[\"A: ...\", \"B: ...\", \"A: ...\", \"B: ...\"], [...]].`,
         },
       ],
     });
@@ -95,6 +95,26 @@ app.post("/translate-line", async (req, res) => {
   } catch (error) {
     console.error("🔴 번역 오류:", error.response?.data || error.message);
     res.status(500).json({ error: "번역 실패" });
+  }
+});
+
+// --- [비밀번호 인증 엔드포인트 추가] ---
+// 클라이언트에서 비밀번호를 받아 .env의 APP_SECRET_PASSWORD와 비교
+app.post("/login", (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: "비밀번호가 없습니다." });
+    if (password === process.env.APP_SECRET_PASSWORD) {
+      // 인증 성공
+      res.json({ success: true });
+    } else {
+      // 인증 실패
+      res.status(401).json({ error: "비밀번호가 틀렸습니다." });
+    }
+  } catch (err) {
+    // 예외 처리
+    console.error("🔴 로그인 오류:", err.message);
+    res.status(500).json({ error: "로그인 처리 중 오류 발생" });
   }
 });
 
